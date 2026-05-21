@@ -20,8 +20,10 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 ## 2. Python Script prerequisite 
 Install following libraries before running the script
 ```bash
-
+pip install os psutil GPUtil time firebase_admin platform subprocess socket
 ```
+
+Notice: Make sure you have an virtual environment set before you run it as I might cause you an error.
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
