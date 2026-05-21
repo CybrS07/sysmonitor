@@ -11,7 +11,9 @@ from firebase_admin import credentials, db
 # 1. AUTO-DETECT FILE PATHS
 # This ensures it finds the json file regardless of where you start the terminal
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-JSON_PATH = os.path.join(BASE_DIR, "sys-monitor.json")
+JSON_PATH = os.path.join(
+    BASE_DIR, "  "
+)  # add secret key.jon from services link here in " " from firebase
 
 # FIREBASE INITIALIZATION
 if not os.path.exists(JSON_PATH):
@@ -21,9 +23,7 @@ if not os.path.exists(JSON_PATH):
 cred = credentials.Certificate(JSON_PATH)
 firebase_admin.initialize_app(
     cred,
-    {
-        "databaseURL": "https://sys-monitor-c1c77-default-rtdb.asia-southeast1.firebasedatabase.app/"
-    },
+    {"databaseURL": " "},  # live database link from my firebase
 )
 ref = db.reference("/live_stats")
 
