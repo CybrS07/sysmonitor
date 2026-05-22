@@ -23,100 +23,134 @@ if not os.path.exists(JSON_PATH):
 cred = credentials.Certificate(JSON_PATH)
 firebase_admin.initialize_app(
     cred,
-    {"databaseURL": " "},  # live database link from my firebase
+    {"databaseURL": " "},  # realtime database link from my firebase
 )
 ref = db.reference("/live_stats")
 
 
+def get_running_procs():
+    procs = []
+    # Collect top 8 processes by CPU usage
+    for proc in sorted(
+        psutil.process_iter(["name", "cpu_percent", "memory_info"]),
+        key=lambda p: p.info["cpu_percent"] or 0,
+        reverse=True,
+    )[:8]:
+        try:
+            procs.append(
+                {
+                    "name": proc.info["name"],
+                    "cpu": round(proc.info["cpu_percent"] or 0, 1),
+                    "ram": f"{round(proc.info['memory_info'].rss / (1024**2), 1)} MB",
+                }
+            )
+        except:
+            continue
+    return procs
+
+
 def get_sys_model():
-    """Universal logic to find the specific Laptop/PC Model name."""
+    """Fetches the system product name/model."""
     try:
         if platform.system() == "Linux":
-            # Direct look at BIOS files on Linux
+            # Typical path for Linux systems (Fedora/Debian/etc)
             with open("/sys/class/dmi/id/product_name", "r") as f:
                 return f.read().strip()
         elif platform.system() == "Windows":
-            return (
-                subprocess.check_output("wmic csproduct get name", shell=True)
-                .decode()
-                .split("\n")[1]
-                .strip()
+            return platform.node()  # Fallback for Windows
+    except:
+        return "Unknown Model"
+
+
+def get_cpu_data():
+    # Fetch all thermal sensors
+    temps = psutil.sensors_temperatures()
+    all_temps = []
+
+    # Common sensor keys in Linux for Intel/AMD CPUs
+    # You might need to adjust 'coretemp' to 'k10temp' or similar based on your CPU
+    if "coretemp" in temps:
+        # Filter for sensors that have 'Core' in their label
+        all_temps = [s.current for s in temps["coretemp"] if "Core" in s.label]
+
+    # Fallback: if sensors are fewer than cores, repeat/pad the last known temp
+    # to avoid index errors in your React Native app
+    cpu_count = psutil.cpu_count(logical=True)
+    while len(all_temps) < cpu_count:
+        all_temps.append(all_temps[-1] if all_temps else 40.0)
+
+    return all_temps[:cpu_count]
+
+
+def get_cpu_telemetry():
+    usages = psutil.cpu_percent(percpu=True)
+    temps = psutil.sensors_temperatures()
+
+    # 1. Capture the correct 'Package id' temperature
+    # This is the most accurate reading for the entire CPU die
+    package_temp = 40.0  # Default fallback
+    for adapter in temps:
+        for sensor in temps[adapter]:
+            if "Package" in sensor.label or "Tdie" in sensor.label:
+                package_temp = sensor.current
+                break
+
+    # 2. Map this single, accurate reading to all cores
+    # This eliminates "off" readings caused by multi-sensor noise
+    logical_cores = psutil.cpu_count(logical=True)
+    temps_data = [package_temp] * logical_cores
+
+    return usages, temps_data
+
+
+def get_gpu_data():
+    gpus_data = []
+    try:
+        for g in GPUtil.getGPUs():
+            gpus_data.append(
+                {
+                    "name": g.name,
+                    "driver": g.driver,
+                    "uuid": g.uuid,
+                    "load": g.load * 100,
+                    "temp": g.temperature,
+                    "memoryTotal": g.memoryTotal,
+                    "memoryUsed": g.memoryUsed,
+                    "memoryFree": g.memoryFree,
+                }
             )
     except:
-        return f"{platform.machine()} PC"
-
-
-def get_cpu_temperatures(count):
-    """Dynamic Temperature Scanner. Handles different OS sensor labels."""
-    temps = []
-    try:
-        t_dict = psutil.sensors_temperatures()
-        # Find any sensor cluster labeled 'coretemp' or 'cpu_thermal'
-        found = t_dict.get("coretemp", t_dict.get("cpu_thermal", []))
-        temps = [t.current for t in found]
-    except:
         pass
-
-    # Pad or slice to match current CPU core count
-    if not temps:
-        return [40.0] * count  # Default safe display
-    while len(temps) < count:
-        temps.append(sum(temps) / len(temps))  # Average padding
-    return temps[:count]
+    return gpus_data
 
 
 def fetch_live_data():
-    # 1. CPU INVESTIGATION
-    # Fetches real core counts and usages per thread
-    cpu_usages = psutil.cpu_percent(percpu=True)
-    num_cores = len(cpu_usages)
+    # Capture telemetry
+    usages, temps = get_cpu_telemetry()
 
-    # 2. MEMORY INVESTIGATION
     mem = psutil.virtual_memory()
     swp = psutil.swap_memory()
 
-    # 3. GPU INVESTIGATION (NVIDIA Multi-GPU support)
-    found_gpus = []
-    try:
-        gpus = GPUtil.getGPUs()
-        for g in gpus:
-            found_gpus.append(
-                {"name": g.name, "load": g.load * 100, "temp": g.temperature}
-            )
-    except:
-        pass
-
-    # 4. NETWORK VELOCITY (Rate Delta)
-    # Grab initial snap, wait 1 second, grab again
     net_prev = psutil.net_io_counters()
     time.sleep(1)
     net_now = psutil.net_io_counters()
 
-    # 5. ENVIRONMENT SENSORS (Uptime, Battery, OS)
     battery = psutil.sensors_battery()
-    boot_time = psutil.boot_time()
-    uptime_sec = time.time() - boot_time
 
-    # --- CONSTRUCT PAYLOAD ---
-    # This keyset perfectly matches your React Native dashboard keys
     return {
         "sensors": {
             "os_name": f"{platform.system()} {platform.release()}",
             "kernel": platform.version(),
-            "plasma": "6.6 (Adaptive)",  # KDE Plasma Mock version for the UI
+            "plasma": "6.6 (Adaptive)",
             "ip": socket.gethostbyname(socket.gethostname()),
-            "model": get_sys_model(),
+            "model": get_sys_model(),  # Ensure this is defined elsewhere in your script
         },
         "performance": {
             "cpu_total": psutil.cpu_percent(),
-            "cpu_usages": cpu_usages,
-            "cpu_temps": get_cpu_temperatures(num_cores),
+            "cpu_usages": usages,  # Now explicitly aligned
+            "cpu_temps": temps,  # Now explicitly aligned
         },
-        "gpus": (
-            found_gpus
-            if found_gpus
-            else [{"name": "Standard Controller", "load": 5.0, "temp": 0.0}]
-        ),
+        "gpus": get_gpu_data(),
         "memory": {
             "ram_total": round(mem.total / (1024**3), 1),
             "ram_used": round(mem.used / (1024**3), 1),
@@ -132,18 +166,7 @@ def fetch_live_data():
             "battery": battery.percent if battery else 100,
             "charging": battery.power_plugged if battery else True,
         },
-        "procs": [
-            {
-                "name": p.info["name"],
-                "cpu": p.info["cpu_percent"],
-                "ram": f"{round(p.info['memory_info'].rss / 1024 / 1024, 1)} MiB",
-            }
-            for p in sorted(
-                psutil.process_iter(["name", "cpu_percent", "memory_info"]),
-                key=lambda x: x.info["memory_info"].rss,
-                reverse=True,
-            )[:10]
-        ],
+        "procs": get_running_procs(),
         "sync_time": time.strftime("%H:%M:%S"),
     }
 
