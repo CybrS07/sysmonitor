@@ -1,20 +1,13 @@
-# system Monitoring system
+### System Monitoring system
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
+Before execution the program following instructions inorder to make the program works
 # 1. NPM Prerequisite
-
-1. Install dependencies
-
+Install dependencies
    ```bash
    npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
    ```
 
 ## 2. Python Script prerequisite 
@@ -23,7 +16,52 @@ Install following libraries before running the script
 pip install os psutil GPUtil time firebase_admin platform subprocess socket
 ```
 
-Notice: Make sure you have an virtual environment set before you run it as I might cause you an error.
+## 3. Structure
+The structure of the file are given below and the once mark as ** edit for changes ** these are the file that can be chage for customized the application
+```
+----.claude
+|---.expo
+|---.vscode
+|--- assets
+|--- script
+|--- src
+      |--- app
+            |--- _layout.tsx   <====[ edits for changes ]
+            |--- index.tsx     <====[ edits for changes ]
+      |--- components
+            |--- app-tabs.tsx  <====[ edit for changes ]
+|--- .ignore.git <=====[ edit for changes ]
+|--- AGENTS.md
+|--- app.json
+|--- CLAUDE.md
+|--- monitor.py  <====[ edit for changes ]
+```
+
+## 4. Working
+1. Make a account in the (Firebase)[https://console.firebase.google.com] and maek and account
+2. Create a new project
+3. After making the project, set up real-time database by going to **Database & storage > Realtime Database**.
+4. The fir got to rules and change chenge the to the following.
+```bash
+"rules": {
+    ".read": true,
+    ".write": true
+  }
+```
+5. Then in the same menu goto Data and copy the link, starts with ** https://(projectname)-------.app**, copy in add then in to the **monitor.py** and **app-tab.tsx** as give in the coment in the files.
+6. Now after that inthe same project on th top left corner goto **setting > service account**, there in the **firebase admin sdk**, click on **generate new private key**.
+7. After **step 6**, it will download a **.json** file. Just copy it and move it the the main project folder adn add the relative path in the monitor .py file as in comment given in the files.
+
+## 5. Execution
+Once you are done do the folloing steps
+1. run the python Script **monitor.py**
+2. Start the app by
+   ```bash
+   npm start
+   ```
+   If it dont work tyou first have to **cd** it intothe folder where all the files are and then execute it.
+   
+*Notice:* Make sure you have an virtual environment set before you run it as I might cause you an error.
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
@@ -62,3 +100,7 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Joint my on
+- [YouTube](youtube.com/@CybrS07)
+- [Linkedin](www.linkedin.com/in/muhammad-taharajputra)
