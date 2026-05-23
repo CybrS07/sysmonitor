@@ -102,5 +102,9 @@ Join our community of developers creating universal apps.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
 ## Joint my on
-- [YouTube](youtube.com/@CybrS07)
-- [Linkedin](www.linkedin.com/in/muhammad-taharajputra)
+<div align="left">
+
+- <a href="https://youtube.com/@CybrS07"><img src="https://www.readmecodegen.com/api/social-icon?name=youtube&size=16&color=%23ef4444" alt="YouTube" /></a> [YouTube](https://youtube.com/@CybrS07)
+- <a href="https://www.linkedin.com/in/muhammad-taharajputra"><img src="https://www.readmecodegen.com/api/social-icon?name=linkedin&size=16" alt="LinkedIn" /></a> [LinkedIn](https://www.linkedin.com/in/muhammad-taharajputra)
+
+</div>
