@@ -43,10 +43,16 @@ The structure of the file are given below and the once mark as ** edit for chang
 3. After making the project, set up real-time database by going to **Database & storage > Realtime Database**.
 4. The fir got to rules and change chenge the to the following.
 ```bash
-"rules": {
-    ".read": true,
-    ".write": true
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "data": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    }
   }
+}
 ```
 5. Then in the same menu goto Data and copy the link, starts with ** https://(projectname)-------.app**, copy in add then in to the **monitor.py** and **app-tab.tsx** as give in the coment in the files.
 6. Now after that inthe same project on th top left corner goto **setting > service account**, there in the **firebase admin sdk**, click on **generate new private key**.
